@@ -1,8 +1,16 @@
 # Project rules
-本规则仅作用于本小组项目，不修改全局规则或个人项目模板。
-开工先读 TASKS.md（若有）、README.md、当前openspec变更及 docs/standards/ 全部五份规范。
-先规约后实现；禁止整套迁移个人项目、读取个人凭据、调用额外外部服务、远端创建/push或公网部署。
-接口层→业务层→repository接口；adapter实现接口，cmd组装。规范冲突先修代码，例外必须写明范围与验证依据。
-每次实现后使用 docs/workflows/verification.md；版本检查使用 docs/workflows/release.md。
-失败检查不得改成通过；内部记录在internal/，产品正文和界面不显示制作备注。
 
+## 开发入口
+修改前阅读 README.md、当前 OpenSpec 变更及 docs/standards/ 下的五份工程规范。先更新规约，再实现对应任务。
+
+## 工程约束
+- 依赖方向为 handler → service → repository 接口；adapter 实现接口，cmd 负责组装。
+- 配置从环境变量读取。凭据、本地配置、原始资料和运行数据不得提交，外部服务只能使用显式配置的地址。
+- 基础工程不接入额外外部服务；新增外部依赖或公网部署须在独立变更中说明配置、安全和验证方案。
+- 实现与规范冲突时修正实现；必要的设计例外应说明适用范围、理由和验证依据。
+
+## 检查与交付
+- 实现后按 `docs/workflows/verification.md` 检查；本地版本按 `docs/workflows/release.md` 核验。
+- 检查失败时修复原因，不降低断言或将失败记为通过。
+- 提交按独立变更组织，说明改动内容和对应规约。版本验证结果保存在 `docs/releases/`。
+- 公开文档只保留项目说明、工程约定、设计依据和可复现的验证结论。会话记录、操作授权及个人工作记录存放在不入库的 `internal/`。
