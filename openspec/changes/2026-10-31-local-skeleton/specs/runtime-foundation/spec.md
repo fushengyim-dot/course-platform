@@ -51,3 +51,8 @@ The system SHALL start from explicit configuration, expose bounded dependency he
 - **GIVEN** the server is processing a health request
 - **WHEN** SIGTERM is received
 - **THEN** it allows in-flight requests up to 5 seconds to finish and exits without accepting new connections
+
+#### Scenario: S11 Backend replacement
+- **GIVEN** the gateway stays running and the backend container is replaced
+- **WHEN** backend readiness returns and DNS cache expires within 5 seconds
+- **THEN** /health resumes HTTP 200 without restarting the gateway

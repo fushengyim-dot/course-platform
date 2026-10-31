@@ -1,0 +1,15 @@
+*
+!backend/
+!backend/**
+!frontend/
+!frontend/**
+!scripts/
+!scripts/**
+!deploy/
+!deploy/**
+**/node_modules
+**/dist
+**/.env*
+**/.git
+**/*.pem
+**/*.key

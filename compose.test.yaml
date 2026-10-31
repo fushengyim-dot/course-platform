@@ -1,0 +1,6 @@
+name: group-platform-tests
+services:
+  checks:
+    build:
+      context: .
+      dockerfile: deploy/checks.Dockerfile

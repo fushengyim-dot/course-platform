@@ -1,0 +1,51 @@
+name: ${COMPOSE_PROJECT_NAME:?required}
+services:
+  web:
+    build: ./frontend
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:?required}
+    ports: ["127.0.0.1:${WEB_PORT:?required}:8080"]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 4s
+      retries: 12
+  api:
+    build: ./backend
+    environment:
+      APP_VERSION: ${APP_VERSION:?required}
+      HTTP_ADDR: ${HTTP_ADDR:?required}
+      MYSQL_HOST: ${MYSQL_HOST:?required}
+      MYSQL_PORT: ${MYSQL_PORT:?required}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?required}
+      MYSQL_USER: ${MYSQL_USER:?required}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?required}
+      QDRANT_URL: ${QDRANT_URL:?required}
+    depends_on: [mysql, qdrant]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 10s
+    healthcheck:
+      test: ["CMD", "/server", "probe"]
+      interval: 5s
+      timeout: 4s
+      retries: 24
+  mysql:
+    image: mysql:8.4.7
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?required}
+      MYSQL_USER: ${MYSQL_USER:?required}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?required}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?required}
+    volumes: [mysql-data:/var/lib/mysql]
+  qdrant:
+    image: qdrant/qdrant:v1.15.5
+    environment:
+      QDRANT__TELEMETRY_DISABLED: "true"
+    volumes: [qdrant-data:/qdrant/storage]
+volumes:
+  mysql-data:
+  qdrant-data:

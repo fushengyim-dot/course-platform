@@ -13,16 +13,18 @@
 3. `docker compose up --build -d --wait`。
 4. 打开 `http://127.0.0.1:18770/`；访问 `/health` 应为 HTTP 200、code 为 OK，包含版本、UTC 时间和 mysql/qdrant 状态。`/live` 只检查进程存活。
 
+开发提交前安装本地检查钩子：`git config core.hooksPath .githooks`（需要 Python 3）；手动全历史检查：`python scripts/check_secrets.py --history`。这会检查暂存边界、已配置的本地秘密和私钥标记，不替代完整安全审计。
+
 停止：`docker compose down`（保留数据卷）。不使用 `down -v` 清除资料。仅入口绑定本机，数据库与后端不映射宿主机端口。
 
 ## 测试
-`docker compose --profile test run --build --rm checks` 执行后端测试、分层检查、前端类型检查与构建；退出 0 才通过，结果在控制台。测试不需要数据库凭据或额外外部服务，安装依赖后测试本身使用本机替身。`docker compose config --quiet` 检查配置。正式发布前还需执行独立目录启动与故障演练。
+`docker compose -f compose.test.yaml run --build --rm checks` 执行后端测试、分层检查、前端类型检查与构建；退出 0 才通过，结果在控制台。测试不需要数据库凭据或额外外部服务，安装依赖后测试本身使用本机替身。`docker compose config --quiet` 检查配置。本地故障演练：`python scripts/verify_runtime.py`，需要 Python 3；该命令只操作当前 Compose 项目，会短暂停止并恢复两个依赖、重建后端，请勿在演示中途执行。正式发布前还需执行独立目录启动检查。
 
 ## 协作与版本
 单人成组：用户承担产品、开发、测试和发布角色，独立维护；自测不代替另一成员独立机器检查。主干 `main`，开发分支 `feature/<短横线名称>`；变更目录 `openspec/changes/YYYY-MM-DD-name`。提交信息说明改动及规约名称，验收后合并与打标签。当前仅本地仓库，无远端保护、读者访问或公开发布。开源许可未选择，待确定发布方式后再决定。
 
 ## 配置与安全
-配置字段见 `.env.example`。缺少必需值时启动失败，不自动回落。密码只存本机 `.env`，不得放入日志、镜像、前端或 Git。发现泄露由用户撤销并轮换凭据，检查影响范围；涉及历史重写另行确认。不要仅删除当前文件后继续发布。
+配置字段见 `.env.example`。`HTTP_ADDR` 与 `API_UPSTREAM` 的端口须一致。缺少必需值时启动失败，不自动回落。密码只存本机 `.env`，不得放入日志、镜像、前端或 Git。发现泄露由用户撤销并轮换凭据，检查影响范围；涉及历史重写另行确认。不要仅删除当前文件后继续发布。
 
 ## 回退
 已有两个经过验证的版本时，在独立目录检出上一标签，使用独立 Compose 项目名和端口，按上述步骤启动并核对 `/health`，再切换入口。本地首个版本没有上一可运行版本；不虚构回滚演练。数据库结构变更必须先设计兼容及恢复方案。

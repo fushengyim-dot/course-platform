@@ -3,8 +3,8 @@
 !.env.example
 internal/
 tmp/
-TASKS.md
-HANDOFF.md
+/TASKS.md
+/HANDOFF.md
 任务清单*.md
 选题说明*
 node_modules/
@@ -18,3 +18,5 @@ uploads/
 .DS_Store
 .idea/
 .vscode/
+backend/Bootstrap.Dockerfile
+__pycache__/
