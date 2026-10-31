@@ -8,7 +8,7 @@
 ## 从零启动
 需要 Git、Docker Desktop（Linux 容器，Compose v2）。首次构建需要网络下载公开依赖，无外部业务请求。
 
-1. `git clone <本地仓库绝对路径> group-project`，进入 `group-project`。
+1. `git clone https://github.com/fushengyim-dot/course-platform.git group-project`，进入 `group-project`。
 2. 复制 `.env.example` 为 `.env`，填写两个不同的随机数据库密码；其他值按样例设置。不要使用真实业务账号。端口冲突时修改 `WEB_PORT`，并为并行副本设置不同 `COMPOSE_PROJECT_NAME`。
 3. `docker compose up --build -d --wait`。
 4. 打开 `http://127.0.0.1:18770/`；访问 `/health` 应为 HTTP 200、code 为 OK，包含版本、UTC 时间和 mysql/qdrant 状态。`/live` 只检查进程存活。
@@ -21,7 +21,7 @@
 `docker compose -f compose.test.yaml run --build --rm checks` 执行后端测试、分层检查、前端类型检查与构建；退出 0 才通过，结果在控制台。测试不需要数据库凭据或额外外部服务，安装依赖后测试本身使用本机替身。`docker compose config --quiet` 检查配置。本地故障演练：`python scripts/verify_runtime.py`，需要 Python 3；该命令只操作当前 Compose 项目，会短暂停止并恢复两个依赖、重建后端，请勿在演示中途执行。正式发布前还需执行独立目录启动检查。
 
 ## 协作与版本
-单人成组：用户承担产品、开发、测试和发布角色，独立维护；自测不代替另一成员独立机器检查。主干 `main`，开发分支 `feature/<短横线名称>`；变更目录 `openspec/changes/YYYY-MM-DD-name`。提交信息说明改动及规约名称，验收后合并与打标签。当前仅本地仓库，无远端保护、读者访问或公开发布。开源许可未选择，待确定发布方式后再决定。
+单人成组：用户承担产品、开发、测试和发布角色，独立维护；自测不代替另一成员独立机器检查。主干 `main`，开发分支 `feature/<短横线名称>`；变更目录 `openspec/changes/YYYY-MM-DD-name`。提交信息说明改动及规约名称，验收后合并与打标签。源码仓库：https://github.com/fushengyim-dot/course-platform 。仓库公开，应用仍仅在本地运行。远端分支保护尚未配置。开源许可未选择；公开可读不代表已授予开源许可。
 
 ## 配置与安全
 配置字段见 `.env.example`。`HTTP_ADDR` 与 `API_UPSTREAM` 的端口须一致。缺少必需值时启动失败，不自动回落。密码只存本机 `.env`，不得放入日志、镜像、前端或 Git。发现泄露由用户撤销并轮换凭据，检查影响范围；涉及历史重写另行确认。不要仅删除当前文件后继续发布。

@@ -5,3 +5,4 @@
 接口层→业务层→repository接口；adapter实现接口，cmd组装。规范冲突先修代码，例外必须写明范围与验证依据。
 每次实现后使用 docs/workflows/verification.md；版本检查使用 docs/workflows/release.md。
 失败检查不得改成通过；内部记录在internal/，产品正文和界面不显示制作备注。
+
