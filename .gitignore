@@ -20,3 +20,4 @@ uploads/
 .vscode/
 backend/Bootstrap.Dockerfile
 __pycache__/
+/.verification/
