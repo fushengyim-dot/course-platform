@@ -1,7 +1,7 @@
 # Project rules
 
 ## 开发入口
-修改前阅读 README.md、当前 OpenSpec 变更及 docs/standards/ 下的五份工程规范。先更新规约，再实现对应任务。
+修改前阅读 README.md、openspec/specs/ 中的正式规约、当前 OpenSpec 变更及 docs/standards/ 下的五份工程规范。先更新规约，再实现对应任务。
 
 ## 工程约束
 - 依赖方向为 handler → service → repository 接口；adapter 实现接口，cmd 负责组装。

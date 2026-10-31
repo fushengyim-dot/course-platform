@@ -18,7 +18,7 @@
 |生产隔离|`TestFailureProductionIsolation` 验证七种HTTP方法保持401；镜像只复制cmd/internal，不包含examples|通过|
 |分层与违规检查|六项违规注入：生产反向依赖、行内样式、生产拒绝判断、示例反向依赖、示例身份判断、示例归属判断；均被拒绝并恢复。授权注入要求测试断言失败，编译错误不算通过|通过|
 |构建|Go测试（随机顺序）、go vet、5项前端测试、TypeScript类型检查及Vite构建，最终命令退出0|通过|
-|规约|两项变更的OpenSpec严格校验|通过|
+|规约|三项正式规约的OpenSpec严格校验|通过|
 |浏览器|首页与详情页显示正常；返回/详情链接可用；375像素布局无横向截断；Tab/Enter可触发重试；依赖故障后显示错误，恢复后重试正常|通过|
 
 ## 骨架一致性审查
@@ -42,8 +42,7 @@
 
 ```powershell
 docker compose -p foundation-independent-check -f compose.test.yaml run --build --rm checks
-openspec validate 2026-10-31-foundation-verification --strict
-openspec validate 2026-10-31-local-skeleton --strict
+openspec validate --all --strict --no-interactive
 ```
 
 运行验证需要一个专用本地环境文件，字段参照 `.env.example`，使用全新随机数据库密码；设置 `COMPOSE_PROJECT_NAME=foundation-independent-runtime`、`WEB_PORT=19871`、`API_UPSTREAM=api:8080`，其余内部地址与Compose服务名一致。不要复用已有项目的配置和数据。以下命令中的 `local-test.env` 表示该环境文件，应放在Git忽略目录并替换为实际路径：
