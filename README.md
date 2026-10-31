@@ -3,7 +3,7 @@
 软件开发课程的可运行基础工程。目前提供系统状态页和健康检查；业务功能尚未实现。
 
 ## 用户与场景
-后续业务范围由项目规约确定。本版本供开发者检查运行环境。页面仅 `/` 系统状态；未知路径返回 404。技术栈采用 React / TypeScript / Go / MySQL / Qdrant / Docker Compose。
+后续业务范围由项目规约确定。本版本供开发者检查运行环境。页面包括 `/` 系统状态和 `/status/details` 状态详情；未知路径返回 404。技术栈采用 React / TypeScript / Go / MySQL / Qdrant / Docker Compose。
 
 ## 从零启动
 需要 Git、Docker Desktop（Linux 容器，Compose v2）。首次构建需要网络下载公开依赖，无外部业务请求。
@@ -18,16 +18,21 @@
 停止：`docker compose down`（保留数据卷）。不使用 `down -v` 清除资料。仅入口绑定本机，数据库与后端不映射宿主机端口。
 
 ## 测试
-`docker compose -f compose.test.yaml run --build --rm checks` 执行后端测试、分层检查、前端类型检查与构建；退出 0 才通过，结果在控制台。测试不需要数据库凭据或额外外部服务，安装依赖后测试本身使用本机替身。`docker compose config --quiet` 检查配置。本地故障演练：`python scripts/verify_runtime.py`，需要 Python 3；该命令只操作当前 Compose 项目，会短暂停止并恢复两个依赖、重建后端，请勿在演示中途执行。正式发布前还需执行独立目录启动检查。
+`docker compose -f compose.test.yaml run --build --rm checks` 执行后端测试、分层检查、前端类型检查与构建；退出 0 才通过，结果在控制台。测试不需要数据库凭据或额外外部服务，安装依赖后测试本身使用本机替身。`docker compose config --quiet` 检查配置。本地故障演练：`python scripts/verify_runtime.py`，需要 Python 3；该命令只操作当前 Compose 项目，会短暂停止并恢复两个依赖、重建后端，请勿在演示中途执行。独立目录启动检查：`python scripts/verify_release.py --ref HEAD --port 18772`。它从指定提交导出源码、生成临时测试配置并启动独立服务，结束后停止验证项目并保留数据卷；记录位于不入库的 `.verification/`。
 
 ## 协作与版本
-项目由一名开发者维护。主干 `main`，开发分支 `feature/<短横线名称>`；变更目录 `openspec/changes/YYYY-MM-DD-name`。每项改动通过分支提交 Pull request，完成检查后合并；提交信息说明改动及规约名称。版本验收后打标签。源码仓库：https://github.com/fushengyim-dot/course-platform 。仓库公开，应用仍仅在本地运行。远端分支保护尚未配置。许可：尚未选择，许可方案待确定。
+项目由一名开发者维护。主干 `main`，开发分支 `feature/<短横线名称>`；变更目录 `openspec/changes/YYYY-MM-DD-name`。每项改动通过分支提交 Pull request，完成检查后合并；提交信息说明改动及规约名称。版本验收后打标签。源码仓库：https://github.com/fushengyim-dot/course-platform 。仓库公开，应用仍仅在本地运行。主干启用保护规则：通过 Pull request 合并，且 `verify` 自动检查必须成功。许可：尚未选择，许可方案待确定。
 
 ## 配置与安全
 配置字段见 `.env.example`。`HTTP_ADDR` 与 `API_UPSTREAM` 的端口须一致。缺少必需值时启动失败，不自动回落。密码只存本机 `.env`，不得放入日志、镜像、前端或 Git。发现泄露时由项目维护者立即撤销并轮换凭据，检查日志、镜像及提交历史中的影响范围；历史清理应保留恢复备份并协调已有克隆。
 
 ## 回退
-已有两个经过验证的版本时，在独立目录检出上一标签，使用独立 Compose 项目名和端口，按上述步骤启动并核对 `/health`，再切换入口。目前仅有一个骨架版本标签，双版本回退尚未演练。数据库结构变更必须先设计兼容及恢复方案。
+已有两个经过验证的版本时，在独立目录检出上一标签，使用独立 Compose 项目名和端口，按上述步骤启动并核对 `/health`，再切换入口。自动演练命令：`python scripts/verify_release.py --ref v0.0.2-foundation --previous v0.0.1-skeleton --port 18772`。按上一版、当前版、上一版顺序启动并记录版本、健康检查与耗时；版本可用性见 Tags。数据库结构变更必须先设计兼容及恢复方案。
 
 ## 目录与验证记录
 `backend/` 为分层服务，`frontend/` 为状态页，`openspec/` 为能力规约，`docs/standards/` 为工程规范，`docs/releases/` 为版本验证记录。
+
+## 自动检查
+Pull request 和开发分支触发 GitHub Actions 的 `verify` 检查：提交边界检查、后端与前端测试、构建，以及全新 Linux 环境中的应用与依赖启动。检查采用独立的随机配置，运行结果可在 Actions 查看。
+
+隔离读写接口示例位于 `backend/examples/`，用于验证认证、资源归属、输入边界和幂等约定，不挂载到正式服务。验证命令与结果见 [验证记录](docs/verification.md)。
