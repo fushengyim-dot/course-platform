@@ -11,6 +11,6 @@
 - [x] 4.1 Run normal/failure/boundary tests and deliberate rule violations.
 - [x] 4.2 Verify healthy runtime, failure and recovery, logs and shutdown.
 - [x] 4.3 Reproduce from a clean local clone and scan history for secrets.
-- [ ] 4.4 Save evidence and local skeleton tag.
+- [x] 4.4 Save evidence and local skeleton tag.
 - [ ] 4.5 Independently verify cross-session consistency; do not substitute same-session inspection.
 - [ ] 4.6 Obtain separate-machine peer evidence and teacher-access/branch-protection evidence if later authorized; not available in local-only single-person delivery.
