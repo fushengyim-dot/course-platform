@@ -30,7 +30,7 @@ func TestFailureMissingEveryKey(t *testing.T) {
 	}
 }
 func TestBoundaryInvalidConfig(t *testing.T) {
-	for _, v := range []struct{ k, v string }{{"MYSQL_PORT", "0"}, {"MYSQL_PORT", "65536"}, {"HTTP_ADDR", ":abc"}, {"QDRANT_URL", "file:///secret"}, {"QDRANT_URL", "http://u:secret@host"}, {"QDRANT_URL", "http://host?secret=x"}, {"QDRANT_URL", "http://host#fragment"}, {"APP_VERSION", strings.Repeat("a", 65)}} {
+	for _, v := range []struct{ k, v string }{{"QDRANT_URL", "http://qdrant:0"}, {"QDRANT_URL", "http://qdrant:65536"}, {"QDRANT_URL", "http://qdrant:"}, {"MYSQL_PORT", "0"}, {"MYSQL_PORT", "65536"}, {"HTTP_ADDR", ":abc"}, {"QDRANT_URL", "file:///secret"}, {"QDRANT_URL", "http://u:secret@host"}, {"QDRANT_URL", "http://host?secret=x"}, {"QDRANT_URL", "http://host#fragment"}, {"APP_VERSION", strings.Repeat("a", 65)}} {
 		m := good()
 		m[v.k] = v.v
 		if _, e := Load(func(k string) string { return m[k] }); e == nil {

@@ -49,3 +49,11 @@ The example SHALL expose authenticated GET and POST record handlers with layered
 #### Scenario: Production isolation
 - **WHEN** the production server receives /api/v1/records requests
 - **THEN** its existing HTTP 401 behavior remains unchanged
+
+#### Scenario: Exact response and input contract
+- **WHEN** the example processes a create, replay or conflicting write
+- **THEN** create and replay return 201 CREATED, conflict returns 409 CONFLICT; keys contain 1–128 ASCII letters, digits, underscores or hyphens and titles contain 1–80 Unicode code points after trimming
+
+#### Scenario: Route and query boundaries
+- **WHEN** an authenticated request uses query parameters, an unsupported method on a registered route, or an unknown route
+- **THEN** it returns 400 INVALID_ARGUMENT, 405 METHOD_NOT_ALLOWED, or 404 NOT_FOUND respectively without accessing storage

@@ -29,7 +29,7 @@ func Load(get func(string) string) (Config, error) {
 		return Config{}, fmt.Errorf("invalid configuration: MYSQL_PORT")
 	}
 	u, e := url.Parse(c.QdrantURL)
-	if e != nil || u.Hostname() == "" || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Path != "" && u.Path != "/") {
+	if e != nil || u.Hostname() == "" || (u.Port() != "" && !validPort(u.Port())) || strings.HasSuffix(u.Host, ":") || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Path != "" && u.Path != "/") {
 		return Config{}, fmt.Errorf("invalid configuration: QDRANT_URL")
 	}
 	return c, nil
