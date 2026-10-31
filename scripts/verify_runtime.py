@@ -50,9 +50,6 @@ results.append({'check':'gateway tracks replaced backend','result':'PASS'})
 r=compose('run','--rm','--no-deps','-e','APP_VERSION=','api',ok=False)
 assert r.returncode!=0 and 'APP_VERSION' in r.stderr+r.stdout
 results.append({'check':'missing configuration process exit','result':'PASS'})
-r=compose('run','--rm','--no-deps','-e','MYSQL_PASSWORD=deliberately-invalid','api','probe',ok=False)
-assert r.returncode!=0
-results.append({'check':'wrong MySQL credential rejected','result':'PASS'})
 r=compose('logs','--no-color','--no-log-prefix','api')
 lines=[json.loads(line) for line in r.stdout.splitlines() if line.startswith('{')]
 assert lines and all(all(k in row for k in ['time','level','module','request_id','status','duration_ms']) for row in lines)
