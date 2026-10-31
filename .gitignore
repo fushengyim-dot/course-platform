@@ -1,8 +1,8 @@
 .env
 .env.*
 !.env.example
-internal/
-tmp/
+/internal/
+/tmp/
 /TASKS.md
 /HANDOFF.md
 任务清单*.md
