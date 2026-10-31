@@ -18,7 +18,7 @@
 停止：`docker compose down`（保留数据卷）。不使用 `down -v` 清除资料。仅入口绑定本机，数据库与后端不映射宿主机端口。
 
 ## 测试
-`docker compose -f compose.test.yaml run --build --rm checks` 执行后端测试、分层检查、前端类型检查与构建；退出 0 才通过，结果在控制台。测试不需要数据库凭据或额外外部服务，安装依赖后测试本身使用本机替身。`docker compose config --quiet` 检查配置。本地故障演练：`python scripts/verify_runtime.py`，需要 Python 3；该命令只操作当前 Compose 项目，会短暂停止并恢复两个依赖、重建后端，请勿在演示中途执行。独立目录启动检查：`python scripts/verify_release.py --ref HEAD --port 18772`。它从指定提交导出源码、生成临时测试配置并启动独立服务，结束后停止验证项目并保留数据卷；记录位于不入库的 `.verification/`。
+`docker compose -f compose.test.yaml run --build --rm checks` 执行后端测试、分层检查、前端类型检查与构建；退出 0 才通过，结果在控制台。测试不需要数据库凭据或额外外部服务，安装依赖后测试本身使用本机替身。`docker compose config --quiet` 检查配置。本地故障演练：`python scripts/verify_runtime.py`，需要 Python 3；该命令只操作当前 Compose 项目，会短暂停止并恢复两个依赖、重建后端，请勿在演示中途执行。独立目录启动检查（需要 Python 3.12 或更新版本）：`python scripts/verify_release.py --ref HEAD --port 18772`。它从指定提交导出源码、生成临时测试配置并启动独立服务，结束后停止验证项目并保留数据卷；记录位于不入库的 `.verification/`。
 
 ## 协作与版本
 项目由一名开发者维护。主干 `main`，开发分支 `feature/<短横线名称>`；变更目录 `openspec/changes/YYYY-MM-DD-name`。每项改动通过分支提交 Pull request，完成检查后合并；提交信息说明改动及规约名称。版本验收后打标签。源码仓库：https://github.com/fushengyim-dot/course-platform 。仓库公开，应用仍仅在本地运行。主干启用保护规则：通过 Pull request 合并，且 `verify` 自动检查必须成功。许可：尚未选择，许可方案待确定。
