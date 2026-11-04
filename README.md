@@ -30,7 +30,7 @@
 已有两个经过验证的版本时，在独立目录检出上一标签，使用独立 Compose 项目名和端口，按上述步骤启动并核对 `/health`，再切换入口。自动演练命令：`python scripts/verify_release.py --ref v0.0.2-foundation --previous v0.0.1-skeleton --port 18772`。按上一版、当前版、上一版顺序启动并记录版本、健康检查与耗时；版本可用性见 Tags。数据库结构变更必须先设计兼容及恢复方案。
 
 ## 目录与验证记录
-`backend/` 为分层服务，`frontend/` 为状态页，`openspec/` 为能力规约，`docs/standards/` 为工程规范，`docs/releases/` 为版本验证记录。
+`backend/` 为分层服务，`frontend/` 为状态页，`openspec/` 为能力规约，[工程规范索引](docs/standards/README.md)覆盖产品、后端、安全、测试、运维、AI、数据与评审，`docs/releases/` 为版本验证记录。
 
 ## 自动检查
 Pull request 和开发分支触发 GitHub Actions 的 `verify` 检查：提交边界检查、后端与前端测试、构建，以及全新 Linux 环境中的应用与依赖启动。检查采用独立的随机配置，运行结果可在 Actions 查看。
