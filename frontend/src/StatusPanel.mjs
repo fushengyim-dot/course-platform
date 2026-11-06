@@ -14,5 +14,5 @@ export function StatusPanel(){
  return h(StatusView,{state,health,onRetry:()=>void load()});
 }
 export function StatusPage({details=false,Panel=StatusPanel}){
- return h('main',null,h('header',null,h('h1',null,details?'系统状态详情':'系统状态'),h('p',null,details?'查看版本、检查时间与依赖服务状态。':'查看当前服务是否可以正常使用。'),h('nav',null,h('a',{href:details?'/':'/status/details'},details?'返回系统状态':'查看状态详情'))),h(Panel));
+ return h('main',null,h('header',null,h('h1',null,details?'系统状态详情':'系统状态'),h('p',null,details?'查看版本、检查时间与依赖服务状态。':'查看当前服务是否可以正常使用。'),h('nav',null,h('a',{href:details?'/':'/status/details'},details?'返回系统状态':'查看状态详情'),'　',h('a',{href:'/information'},'信息检索'))),h(Panel));
 }
