@@ -48,7 +48,10 @@ func run() error {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	client := &http.Client{Timeout: 2 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	svc := service.Service{Version: c.Version, MySQL: adapter.SQLProbe{DB: db}, Qdrant: adapter.HTTPProbe{URL: c.QdrantURL, Client: client}, Now: time.Now}
-	srv := &http.Server{Addr: c.HTTPAddr, Handler: handler.New(svc, logger), ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 8192}
+	syntheticPublicData := adapter.NewSyntheticPublicInformation()
+	publicInfo := service.PublicInformation{Repository: syntheticPublicData, Now: time.Now}
+	publicInstitutions := service.PublicInstitutionDirectory{Repository: syntheticPublicData}
+	srv := &http.Server{Addr: c.HTTPAddr, Handler: handler.NewWithPublicData(svc, publicInfo, publicInstitutions, logger), ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 8192}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	listener, err := net.Listen("tcp", c.HTTPAddr)
