@@ -38,6 +38,15 @@
 
 ## 复现
 
+面向`main`的PR还须包含`docs/reviews/review-*.md`记录。自动检查校验记录路径、必填项、两层核查表、被审提交SHA及其可读取性；本地可运行记录字段单元测试：
+
+```powershell
+python -m unittest discover -s scripts -p test_check_review_records.py
+python scripts/check_review_records.py --base <base-sha> --head <head-sha>
+```
+
+第二条命令的base/head应分别填入PR目标分支提交和PR当前提交。自动检查只证明记录结构齐全，不证明审核推理正确；维护者仍需按[核查清单](code-review/checklist.md)读差异和依据。
+
 从项目根目录运行：
 
 ```powershell

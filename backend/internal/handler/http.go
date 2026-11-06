@@ -52,7 +52,7 @@ func NewWithPublicData(s service.Service, information service.PublicInformation,
 				status, code, message = 400, "INVALID_ARGUMENT", "该接口不接受查询参数"
 			} else if r.URL.Path == "/api/v1/public-institutions" {
 				if items, err := institutions.List(r.Context()); err != nil {
-					status, code, message = 503, "UNAVAILABLE", "院校信息暂时不可用"
+					status, code, message = 503, "DEPENDENCY_UNAVAILABLE", "院校信息暂时不可用"
 				} else {
 					data = items
 				}
@@ -64,7 +64,7 @@ func NewWithPublicData(s service.Service, information service.PublicInformation,
 					if err == service.ErrPublicInstitutionNotFound {
 						status, code, message = 404, "NOT_FOUND", "资源不存在"
 					} else {
-						status, code, message = 503, "UNAVAILABLE", "院校信息暂时不可用"
+						status, code, message = 503, "DEPENDENCY_UNAVAILABLE", "院校信息暂时不可用"
 					}
 				} else {
 					data = item
@@ -91,14 +91,14 @@ func NewWithPublicData(s service.Service, information service.PublicInformation,
 			} else if r.URL.Path == "/api/v1/public-information" {
 				query, ok := publicInformationQuery(r.URL.Query())
 				if !ok { status, code, message = 400, "INVALID_ARGUMENT", "检索条件无效" } else if page, err := information.List(r.Context(), query); err != nil {
-					if err == service.ErrInvalidPublicQuery { status, code, message = 400, "INVALID_ARGUMENT", "检索条件无效" } else { status, code, message = 503, "UNAVAILABLE", "信息暂时不可用" }
+					if err == service.ErrInvalidPublicQuery { status, code, message = 400, "INVALID_ARGUMENT", "检索条件无效" } else { status, code, message = 503, "DEPENDENCY_UNAVAILABLE", "信息暂时不可用" }
 				} else { data = page }
 			} else if r.URL.RawQuery != "" {
 				status, code, message = 400, "INVALID_ARGUMENT", "详情接口不接受查询参数"
 			} else {
 				id := strings.TrimPrefix(r.URL.Path, "/api/v1/public-information/")
 				if strings.Contains(id, "/") { status, code, message = 404, "NOT_FOUND", "资源不存在" } else if item, err := information.Get(r.Context(), id); err != nil {
-					if err == service.ErrPublicInformationNotFound { status, code, message = 404, "NOT_FOUND", "资源不存在" } else { status, code, message = 503, "UNAVAILABLE", "信息暂时不可用" }
+					if err == service.ErrPublicInformationNotFound { status, code, message = 404, "NOT_FOUND", "资源不存在" } else { status, code, message = 503, "DEPENDENCY_UNAVAILABLE", "信息暂时不可用" }
 				} else { data = item }
 			}
 		case strings.HasPrefix(r.URL.Path, "/api/"):
