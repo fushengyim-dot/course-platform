@@ -48,3 +48,12 @@
 - [x] Add a month calendar view with previous/next navigation, marked dates, selected-day results and an empty-day state.
 - [x] Test valid/invalid months, multiple schools on one date, missing dates, read failures and browser month/day/link behavior.
 - [x] Run all project checks, strict OpenSpec validation and browser checks on the same revision; update task and handoff records.
+
+## T2 synthetic teacher review and publication design
+- [x] Limit the first T2 design to a fixed fictional candidate set; exclude real source collection, authentication-provider integration and production data.
+- [x] Define immutable revision snapshots, one active draft pointer, one published pointer, atomic publish/withdraw behavior and auditable actor/time events.
+- [x] Define server-side role gates, proposed management routes, response/error behavior, replay handling and public DTO isolation.
+- [x] Add scenarios for synthetic candidate rejection/conversion, unpublished invisibility, teacher-only preview, invalid publish, old-public-revision continuity, stale writes, authorization, withdrawal across all public views and storage failure.
+- [ ] Obtain owner decisions on second-person approval, teacher data scope, taxonomy/source field requirements and evidence retention before implementation.
+- [ ] Select trusted teacher identity and account provisioning before enabling management endpoints.
+- [ ] Implement the approved T2 slice, then run mapped API/UI/security checks on one revision; do not treat this design validation as implementation acceptance.

@@ -1,7 +1,7 @@
 # Design
 
 ## Scope
-This change defines public information discovery and teacher curation: anonymous visitors and students can search/read published information; teachers can curate network-source candidates and publish approved revisions. Student profiles and teacher workspaces remain private. Positioning and simulation notes below are future design alignment only; no implementation is claimed.
+This change defines public information discovery and teacher curation: anonymous visitors and students can search/read published information; teachers can review synthetic candidates and explicitly publish approved revisions. The T2 slice is design-only and uses synthetic source fixtures. It does not fetch real websites, connect an authentication provider, or implement code. Student profiles and teacher workspaces remain protected. Positioning and simulation notes below are future design alignment only; no implementation is claimed.
 
 ## Roles and access
 - **Anonymous:** read only currently published public-information list/detail. No upload, profile, personal result, consultation, teacher management or internal-knowledge access.
@@ -65,6 +65,64 @@ Logical source record contract (design proposal): `source_id` UUID; `canonical_u
 
 MCP may provide a tool interface for retrieving pages or passing source text, but its response is untrusted input and is not a quality or provenance guarantee. Store original URL, retrieval time, version/hash and evidence location independently; teacher review remains required. This change does not select a production collection connector or source schedule.
 
+## T2 design: synthetic teacher review and publication
+
+### Boundary
+- The first T2 implementation candidate starts from a fixed set of clearly fictional source fixtures and information candidates. It does not perform network requests, import real admissions content, or treat `.invalid` links as usable sources.
+- The initial fixture maps one synthetic candidate to one information record. A teacher may inspect its synthetic source metadata and excerpt, correct the public information fields, save a draft revision, preview the public representation, then explicitly publish or withdraw it. Splitting one source into multiple records remains a later source-intake decision.
+- Candidate extraction, crawler scheduling, source-site allowlists, raw real-source snapshots, and their retention/licensing rules belong to a later source-intake decision. The current T2 slice does not implement those capabilities.
+- The four student-facing navigation sections remain unchanged. Teacher management is a separate workspace and never appears as an anonymous/student capability.
+
+### Record and revision model
+Use a stable `information_record` identity with a nullable `draft_revision_id` and nullable `published_revision_id`. A withdrawal clears the public pointer atomically and records the withdrawal actor/time; revision history remains teacher-visible. A record is publicly available only while it has a published pointer.
+
+The management `status` is derived as follows: `draft` when no revision has ever been published and no published pointer exists; `published` while a published pointer exists, including when a newer private draft is also present; `withdrawn` after an explicit withdrawal has cleared the pointer. A withdrawn record may have a new draft, but it stays unavailable publicly until that draft is explicitly published.
+
+Each `information_revision` is an immutable full snapshot with `record_id`, positive monotonic `revision_number`, the public information fields, source-evidence references, creator identity, and UTC creation time. It reuses the current fields `institution_name`, `college_names`, `title`, `body`, `source_title`, `source_published_on`, `expected_publication_on`, and `registration_url`. The institution and college values must come from the current synthetic directory fixture set; T2 does not create institutions. `expected_publication_on` remains a nullable estimate, distinct from `source_published_on` and event dates. The source evidence URL and student-facing registration URL are separate fields and are fictional `.invalid` values in this slice. Exact requiredness and length limits remain owner decisions listed below.
+
+Saving edits creates a new draft snapshot and advances `draft_revision_id`; it does not mutate an earlier snapshot. Snapshot creation, pointer advancement and the audit event are atomic. Publishing selects the current valid draft snapshot as the published pointer and records publisher identity/time. Pointer switch and publication event are atomic. If a published record is edited, the old published pointer stays active until the new draft is explicitly published. Publishing the same revision again is idempotent. A stale expected revision returns 409. There is at most one current draft and one current published pointer per record.
+
+Each synthetic candidate has a `candidate_review` state (`pending`, `rejected`, `converted`), plus the decision actor/time and, when converted, its record ID. Reject and conversion are mutually exclusive; candidate conversion and draft creation are atomic. A rejected candidate cannot be converted in this slice. A candidate can create only one record; a valid idempotent replay returns that same record. Candidate transitions compare-and-set `pending`, so concurrent reject/convert attempts have one winner and the other returns 409.
+
+The current synthetic institution directory is the only allowed institution/college vocabulary for this slice. Public institution details and calendar entries are projections of the current published information revision, not separately edited copies; the existing static S1 fixtures are replaced by this single publication-backed source when T2 is implemented.
+
+Audit events are append-only and contain actor ID, action (`candidate_rejected`, `candidate_converted`, `draft_created`, `draft_saved`, `published`, `withdrawn`), target candidate/revision, UTC time, and request ID. They must not contain credentials, raw request bodies, or internal free-text notes. Public responses never expose actor IDs, draft IDs, audit events, synthetic-source internals, or teacher-only notes.
+
+### Proposed management API boundary
+All routes below are design proposals and require a server-resolved teacher identity before any protected repository access. Every write requires an `Idempotency-Key` header using the existing 1–128 ASCII letter/digit/underscore/hyphen contract:
+- `GET /api/v1/teacher-information/candidates?status=pending|rejected|converted` lists only fixed synthetic review fixtures; status is an allowlisted filter.
+- `POST /api/v1/teacher-information/candidates/{id}/reject` rejects a pending fixture; it requires an idempotency key and records actor/time without storing a free-text reason in the initial slice.
+- `GET /api/v1/teacher-information/records` and `GET /api/v1/teacher-information/records/{id}` read teacher management views, including review state, revisions and synthetic evidence.
+- `GET /api/v1/teacher-information/records/{id}/preview` returns the same field projection as a public detail but only to the authorized teacher; it does not publish or change state.
+- `POST /api/v1/teacher-information/records` creates a draft from a selected synthetic candidate and requires an idempotency key; replaying the same candidate creation returns the original record.
+- `PUT /api/v1/teacher-information/records/{id}/draft` appends a new immutable draft revision and requires `expected_revision` plus an idempotency key.
+- `POST /api/v1/teacher-information/records/{id}/publish` publishes the current valid draft atomically and requires `expected_revision` plus an idempotency key.
+- `POST /api/v1/teacher-information/records/{id}/withdraw` clears the public pointer atomically and requires `expected_revision` plus an idempotency key.
+
+Create succeeds with 201/CREATED; reads use 200/OK; malformed or invalid fields use 400/INVALID_ARGUMENT; anonymous management requests use 401/UNAUTHORIZED; authenticated non-teachers use 403/FORBIDDEN; absent or withdrawn public details use 404/NOT_FOUND; stale revisions, terminal candidate transitions or idempotency-key conflicts use 409/CONFLICT; storage failures use 503/DEPENDENCY_UNAVAILABLE. Every write has an explicit replay rule. A repeated key with the same actor, route, expected revision and payload returns the original result; reuse for a different operation or payload returns 409. Candidate reject, candidate conversion, draft-save, publish and withdraw return the same result on a valid replay; rejected validation attempts do not persist an idempotency outcome or mutate a revision/pointer.
+
+### Authorization and review policy proposals
+- The server, not the UI, resolves identity and the `teacher` role. Authorization runs before reading candidates or records and before every write. Anonymous requests receive 401; students receive 403; neither case accesses protected storage.
+- No platform login or teacher-account enrollment method is chosen here. Production implementation is blocked until a trusted identity resolver and teacher provisioning/role-removal process are selected.
+- Proposed initial review model: an authenticated teacher may review and publish a revision, including a revision they created; the system records the actor and explicit publish action. A distinct second-person approver is not included. This is a product proposal requiring owner confirmation before implementation.
+- Proposed initial scope: any authenticated teacher may manage the shared public-information records. Institution-level assignment boundaries are not defined. If the product needs school/team-specific scopes, those must be added before real teacher accounts or real data.
+
+### T2 acceptance path
+1. Teacher opens the separate management workspace and sees pending synthetic candidates with clear fictional-source labels.
+2. Teacher may reject a candidate; it stays out of all public views. Alternatively, teacher reviews its excerpt and metadata, corrects fields, and converts it to a draft; candidate decision and draft creation commit together.
+3. Teacher previews the public DTO and receives field/source validation errors before publication if required data is invalid.
+4. Teacher explicitly publishes. The API atomically switches the public pointer; list, detail, directory and calendar read the same published revision.
+5. Teacher edits an already published record. The new draft remains private while the previous published revision stays visible. Publishing the new draft switches all public reads to the new snapshot together.
+6. Teacher withdraws a record. It disappears from list, detail, institution views and calendar; its revision/audit history remains teacher-only. A later republish requires a new draft revision and a new explicit publish action.
+7. UI covers loading, empty, failure and success states; controls are keyboard accessible and narrow layouts reflow without horizontal overflow.
+
+### Decisions that remain open before implementation
+- Trusted teacher identity provider and account enrollment/removal; required before any production management endpoint is enabled.
+- Whether a second teacher must approve a publication; current proposal permits one teacher to publish their own draft.
+- Whether teacher access is global or scoped to institutions/teams; current proposal is shared global access.
+- Final category values, mandatory source fields, field limits, public source-link behavior, and policy for source excerpt/snapshot retention. Existing design values remain proposals until the owner confirms them.
+- Real source allowlist, collection frequency, permitted access basis, licensing and retention. These block real data intake but do not block static synthetic-candidate design.
+
 Public information DTOs and teacher curation DTOs are separate. Public DTOs exclude crawl logs, internal notes, conflict internals, student identity and unreviewed candidates. Teacher views expose richer evidence and review metadata. Public user-provided source links can appear on a published information detail; internal recommendation knowledge sources remain hidden from student positioning output.
 
 ## Follow-on product interface alignment (not in this capability slice)
@@ -75,7 +133,7 @@ Public information DTOs and teacher curation DTOs are separate. Public DTOs excl
 - The simulation interface remains a placeholder until the reference interaction has been verified. Define its final steps only from verified reference behavior.
 
 ## Revision and publication consistency
-A record has immutable numbered revisions. Editing a draft changes that draft revision. Editing an already published record creates a new draft revision while the last published revision remains visible. Publish validates and atomically switches the public pointer to the selected revision and assigns `published_at`; a failed switch leaves the prior public revision unchanged. Withdrawal atomically removes the public pointer and changes management status; old revisions remain teacher-visible but are not publicly addressable. Each write supplies the expected current revision; stale writes return 409 CONFLICT. Repeating the same idempotency key with the same operation returns the original result; reusing it for a different payload returns 409. Public detail reads one revision snapshot, never a mixture of fields across revisions.
+Each numbered revision is an immutable full snapshot. Saving a draft creates a new numbered snapshot and advances the draft pointer. Editing an already published record creates a new draft revision while the last published revision remains visible. Publish validates and atomically switches the public pointer to the selected revision and assigns `published_at`; a failed switch leaves the prior public revision unchanged. Withdrawal atomically clears the public pointer; old revisions remain teacher-visible but are not publicly addressable. Each write supplies the expected current revision; stale writes return 409 CONFLICT. Repeating the same idempotency key with the same actor, route, expected revision and payload returns the original result; reusing it for a different operation or payload returns 409. Public detail reads one revision snapshot, never a mixture of fields across revisions.
 
 ## HTTP and error contract
 Public endpoints: `GET /api/v1/public-information` and `GET /api/v1/public-information/{id}`; both allow anonymous and student identities. Management endpoints are authenticated teacher-only. Student private endpoints (for example profile upload and personal results) require an authenticated student. The exact private route list belongs to their later capability contracts.
