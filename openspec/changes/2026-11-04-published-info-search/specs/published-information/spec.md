@@ -13,6 +13,26 @@ The system SHALL allow an authenticated teacher to create/edit drafts, explicitl
 - **WHEN** the teacher saves without publishing
 - **THEN** the system stores a draft and excludes it from every public list and detail response
 
+#### Scenario: Create from a synthetic candidate
+- **GIVEN** the teacher is authenticated and selects a candidate from the fixed synthetic fixture set
+- **WHEN** the teacher creates a record
+- **THEN** the system stores a private draft revision linked to the synthetic evidence, labels that evidence as fictional, performs no network fetch, and exposes no real-source claim
+
+#### Scenario: Reject a synthetic candidate
+- **GIVEN** the teacher is authenticated and a synthetic candidate is pending review
+- **WHEN** the teacher rejects it
+- **THEN** the system records the actor and time, keeps it out of all public views, and prevents conversion of that rejected candidate into a record
+
+#### Scenario: Candidate conversion is atomic
+- **GIVEN** a pending synthetic candidate
+- **WHEN** the teacher converts it to a draft
+- **THEN** the candidate becomes converted and exactly one draft record is created in the same transaction; an identical idempotent replay returns that record
+
+#### Scenario: Concurrent candidate decisions
+- **GIVEN** a pending synthetic candidate receives concurrent reject and convert requests
+- **WHEN** both requests attempt to change its state
+- **THEN** exactly one transition succeeds; the other returns HTTP 409 CONFLICT and no more than one record is created
+
 #### Scenario: Invalid information fields
 - **GIVEN** a teacher submits a missing required field, invalid category, overlong string, unsafe source URL, invalid date, or reversed event interval
 - **WHEN** the teacher saves or publishes the record
@@ -21,27 +41,67 @@ The system SHALL allow an authenticated teacher to create/edit drafts, explicitl
 #### Scenario: Publish information
 - **GIVEN** an authenticated teacher has a valid draft with its source and evidence fields
 - **WHEN** the teacher explicitly publishes it
-- **THEN** the system atomically records the published revision and makes that revision available to public queries
+- **THEN** the system atomically records the actor/time and published revision pointer, and list, detail, institution and calendar reads all expose that same revision
 
 #### Scenario: Failed publication
 - **GIVEN** publication storage fails
 - **WHEN** a teacher publishes a valid draft
-- **THEN** the system reports a safe failure and leaves the previous public revision unchanged, or keeps a new draft unavailable
+- **THEN** the system returns HTTP 503 DEPENDENCY_UNAVAILABLE and leaves the previous public pointer unchanged; a first-time draft remains unavailable publicly
+
+#### Scenario: Failed draft save or withdrawal
+- **GIVEN** the current record has a draft or published pointer
+- **WHEN** storage fails while saving a draft or withdrawing the publication
+- **THEN** the operation returns HTTP 503 DEPENDENCY_UNAVAILABLE and leaves all prior pointers and audit events unchanged
 
 #### Scenario: Update keeps the previous public revision until publish
 - **GIVEN** a record has a currently published revision
 - **WHEN** a teacher edits content from a fresh source snapshot and saves a draft revision
-- **THEN** public reads continue to return the previous published revision until the teacher publishes the new one
+- **THEN** the system appends an immutable draft snapshot and public reads continue to return the previous published revision until the teacher publishes the new one
+
+#### Scenario: Invalid publish does not change the public pointer
+- **GIVEN** the current draft is missing required information or has invalid fields/evidence
+- **WHEN** the teacher requests publication
+- **THEN** the system returns HTTP 400 INVALID_ARGUMENT and leaves both draft and current public pointer unchanged
 
 #### Scenario: Stale revision and idempotent replay
 - **GIVEN** two teacher edits use the same expected revision, or an operation is repeated with an idempotency key
 - **WHEN** the stale edit or repeated operation is processed
-- **THEN** the stale edit returns HTTP 409 CONFLICT; an identical replay returns the original outcome, and a different payload with the same key returns HTTP 409 CONFLICT
+- **THEN** the stale edit returns HTTP 409 CONFLICT; an identical replay for the same actor, route, expected revision and payload returns the original outcome, and a different operation or payload with the same key returns HTTP 409 CONFLICT
 
 #### Scenario: Withdraw information
 - **GIVEN** a published record
 - **WHEN** an authorized teacher withdraws it
 - **THEN** it disappears from public list/detail while its revision and management history remain available to teachers
+
+#### Scenario: Republish withdrawn information
+- **GIVEN** a withdrawn record with retained revision history
+- **WHEN** a teacher creates a new draft revision and explicitly publishes it
+- **THEN** the new revision becomes the sole public version and prior withdrawn revisions remain history-only
+
+#### Scenario: Teacher authorization is checked before storage
+- **GIVEN** a management request is anonymous or authenticated as a student
+- **WHEN** it requests a candidate, management record or write action
+- **THEN** the server returns 401 UNAUTHORIZED or 403 FORBIDDEN respectively before reading or changing protected storage
+
+#### Scenario: Public reads never expose management data
+- **GIVEN** a record has draft revisions, synthetic evidence details and audit events
+- **WHEN** an anonymous visitor or student reads public list, detail, institution or calendar data
+- **THEN** only fields from the current published revision are returned; drafts, audit data, actor IDs and teacher-only notes are absent
+
+#### Scenario: Teacher preview does not publish
+- **GIVEN** an authenticated teacher previews a valid draft
+- **WHEN** the preview is returned
+- **THEN** it uses the public-detail field projection but remains teacher-only and does not change any public list, detail, institution or calendar result
+
+#### Scenario: Synthetic T2 slice does not collect real sources
+- **GIVEN** the first T2 implementation uses the approved synthetic fixture set
+- **WHEN** a teacher reviews or publishes a record
+- **THEN** the system makes no outbound source request and does not store real admissions material
+
+#### Scenario: Withdrawal removes all public projections
+- **GIVEN** a record is present in public list, detail, institution and calendar results
+- **WHEN** a teacher withdraws it successfully
+- **THEN** every public projection omits it and direct detail returns 404 NOT_FOUND while teacher history remains available
 
 ### Requirement: Traceable network source intake
 The system SHALL preserve provenance for information gathered from permitted public sources, derive candidate items without losing source links, and require teacher review before publication. A network response or MCP tool response SHALL NOT by itself count as verification.

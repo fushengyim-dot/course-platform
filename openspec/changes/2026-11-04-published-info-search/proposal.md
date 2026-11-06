@@ -13,4 +13,4 @@ Students need an immediately useful, login-free information home organized aroun
 - `published-information`: public information publishing/search, source review and access boundaries.
 
 ## Impact
-This extends only the existing OpenSpec change and its capability delta. This change defines contracts without adding a production implementation or data migration, and does not select a collection provider or model. Follow-on positioning and simulation remain design constraints, not implemented capabilities.
+This extends only the existing OpenSpec change and its capability delta. This amendment defines a design-only T2 slice for teacher review and explicit publication using synthetic source fixtures; it adds no production implementation or data migration. Real source collection, authentication-provider selection, positioning and simulation remain outside this slice. No collection provider or model is selected.
