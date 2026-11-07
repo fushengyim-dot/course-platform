@@ -20,6 +20,14 @@ jobs:
           fetch-depth: 0
       - name: Check repository boundary
         run: python3 scripts/check_secrets.py --history
+      - name: Test review record checker
+        run: python3 -m unittest discover -s scripts -p 'test_check_review_records.py'
+      - name: Require pull request review record
+        if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 scripts/check_review_records.py --base "$BASE_SHA" --head "$HEAD_SHA"
       - name: Run tests and build
         run: docker compose -p platform-verification -f compose.test.yaml run --build --rm checks
       - name: Reproduce from current revision

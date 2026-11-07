@@ -11,6 +11,7 @@
 
 ## 检查与交付
 - 实现后按 `docs/workflows/verification.md` 检查；本地版本按 `docs/workflows/release.md` 核验。
+- 代码评审按 `docs/code-review/checklist.md` 逐项覆盖七类核查与七个评审维度；面向 `main` 的 PR 附 `docs/reviews/` 记录。八类工程规范仍由 `docs/standards/` 权威定义。
 - 检查失败时修复原因，不降低断言或将失败记为通过。
 - 提交按独立变更组织，说明改动内容和对应规约。版本验证结果保存在 `docs/releases/`。
 - 公开文档只保留项目说明、工程约定、设计依据和可复现的验证结论。会话记录、操作授权及个人工作记录存放在不入库的 `internal/`。

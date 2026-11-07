@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"group-platform/internal/adapter"
+	"group-platform/internal/repository"
 	"group-platform/internal/service"
 	"log/slog"
 	"net/http"
@@ -54,6 +55,47 @@ func TestPublicInstitutionDirectoryRoutes(t *testing.T){
 	if detail.Code!=200||!strings.Contains(detail.Body.String(),"example.invalid")||!strings.Contains(detail.Body.String(),"计算与智能学院"){t.Fatalf("directory detail: %d %s",detail.Code,detail.Body.String())}
 	if w:=request(h,"GET","/api/v1/public-institutions/20000000-0000-4000-8000-000000000099");w.Code!=404{t.Errorf("missing institution: %d",w.Code)}
 	if w:=request(h,"POST","/api/v1/public-institutions");w.Code!=405{t.Errorf("directory write method: %d",w.Code)}
+}
+
+type failingPublicRepository struct{}
+
+func (failingPublicRepository) ListPublished(context.Context) ([]repository.PublicInformation, error) {
+	return nil, errors.New("private storage failure")
+}
+func (failingPublicRepository) GetPublished(context.Context, string) (repository.PublicInformation, bool, error) {
+	return repository.PublicInformation{}, false, errors.New("private storage failure")
+}
+func (failingPublicRepository) ListPublicInstitutions(context.Context) ([]repository.PublicInstitution, error) {
+	return nil, errors.New("private storage failure")
+}
+func (failingPublicRepository) GetPublicInstitution(context.Context, string) (repository.PublicInstitution, bool, error) {
+	return repository.PublicInstitution{}, false, errors.New("private storage failure")
+}
+
+func TestFailurePublicReadRepositoryContract(t *testing.T) {
+	repository := failingPublicRepository{}
+	h := NewWithPublicData(
+		service.Service{Version: "test-v1", MySQL: up, Qdrant: up, Now: time.Now},
+		service.PublicInformation{Repository: repository},
+		service.PublicInstitutionDirectory{Repository: repository},
+		slog.New(slog.NewJSONHandler(&bytes.Buffer{}, nil)),
+	)
+	for _, path := range []string{
+		"/api/v1/public-information",
+		"/api/v1/public-information/10000000-0000-4000-8000-000000000001",
+		"/api/v1/public-information/calendar?month=2026-11",
+		"/api/v1/public-institutions",
+		"/api/v1/public-institutions/20000000-0000-4000-8000-000000000001",
+	} {
+		w := request(h, "GET", path)
+		var env Envelope
+		if err := json.Unmarshal(w.Body.Bytes(), &env); err != nil {
+			t.Fatalf("decode %s: %v", path, err)
+		}
+		if w.Code != http.StatusServiceUnavailable || env.Code != "DEPENDENCY_UNAVAILABLE" || strings.Contains(w.Body.String(), "private storage failure") {
+			t.Errorf("repository failure contract %s: %d %s", path, w.Code, w.Body.String())
+		}
+	}
 }
 
 var up = probe(func(context.Context) error { return nil })

@@ -11,7 +11,7 @@
 |运维|[ops.md](ops.md)|端口隔离、健康与日志、启动/回退；Compose配置、scripts/verify_runtime.py、scripts/verify_release.py与release-verification|
 |AI|[ai.md](ai.md)|AI-01—04：输入范围、输出验收、外部调用启用条件、公开记录；输入/差异人工审查与同一套实现检查|
 |数据|[data.md](data.md)|DATA-01—04：合同、隔离、迁移、生命周期；接口边界/跨主体/并发测试，未来迁移与删除需独立场景验证|
-|评审|[review.md](review.md)|REVIEW-01—04：变更依据、同提交检查、例外与关闭；PR清单、Actions及归档记录|
+|评审|[review.md](review.md)|REVIEW-01—05：变更依据、同提交检查、例外与关闭；七类代码核查及PR评审记录见[代码核查清单](../code-review/checklist.md)|
 
 每次变更的验证记录应列出：适用规则/规约场景→测试文件或人工步骤→命令与提交→实际结果。未触及的条件性规则可标“不适用”并说明原因，不能标为“通过”。手工检查需写明检查对象和结论，不能冒充自动强制检查。
 
