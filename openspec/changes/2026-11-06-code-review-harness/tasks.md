@@ -7,6 +7,6 @@
 ## 2. Evidence and correction
 
 - [x] 2.1 Review the current synthetic public-information handler, search service and fixture adapter; create three evidence-based records with accurate scope and conclusions.
-- [ ] 2.2 Correct the confirmed 503 response-code mismatch and add tests for repository failure responses.
+- [x] 2.2 Correct the confirmed 503 response-code mismatch and add tests for repository failure responses.
 - [ ] 2.3 Run strict OpenSpec validation, the project verification workflow, the review-record checker, secret/history scan and diff review on the same revision.
 - [x] 2.4 Record limitations, including the absence of independent peer review; do not represent a single-maintainer self-review as cross-review.
